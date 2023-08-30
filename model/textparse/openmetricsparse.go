@@ -152,7 +152,6 @@ func (p *OpenMetricsParser) Metric(l *labels.Labels) string {
 	s := string(p.series)
 
 	p.builder.Reset()
-	fmt.Println("offsets!", p.offsets)
 	p.builder.Add(labels.MetricName, s[p.offsets[0]-p.start:p.offsets[1]-p.start])
 
 	for i := 2; i < len(p.offsets); i += 4 {
@@ -243,7 +242,6 @@ func (p *OpenMetricsParser) Next() (Entry, error) {
 	case tEOF:
 		return EntryInvalid, errors.New("data does not end with # EOF")
 	case tHelp, tType, tUnit:
-		fmt.Println("type?", t)
 		switch t2 := p.nextToken(); t2 {
 		case tMName:
 			mStart := p.l.start
@@ -313,7 +311,6 @@ func (p *OpenMetricsParser) Next() (Entry, error) {
 		// We found a brace, so make room for the eventual metric name. If these
 		// values aren't updated, then the metric name was not set inside the
 		// braces and we can return an error.
-		fmt.Println("BRACE OPEN")
 		if len(p.offsets) == 0 {
 			p.offsets = []int{-1, -1}
 		}
@@ -389,10 +386,8 @@ func (p *OpenMetricsParser) parseComment() error {
 }
 
 func (p *OpenMetricsParser) parseLVals(offsets []int) ([]int, error) {
-	fmt.Println("PARSING LVALS")
 	t := p.nextToken()
 	for {
-		fmt.Println("top loop tok", t)
 		curTStart := p.l.start
 		curTI := p.l.i
 		switch t {
@@ -405,11 +400,9 @@ func (p *OpenMetricsParser) parseLVals(offsets []int) ([]int, error) {
 		}
 
 		t = p.nextToken()
-		fmt.Println("next tok?", t)
 		// A quoted string followed by a comma or brace is a metric name. Set the
 		// offsets and continue processing.
 		if t == tComma || t == tBraceClose {
-			fmt.Println("woop unadorned metric name")
 			if offsets[0] != -1 || offsets[1] != -1 {
 				return nil, fmt.Errorf("metric name already set while parsing: %q", p.l.b[p.start:p.l.i])
 			}
