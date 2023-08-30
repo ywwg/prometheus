@@ -214,11 +214,12 @@ func (p *OpenMetricsParser) nextToken() token {
 }
 
 func (p *OpenMetricsParser) parseError(exp string, got token) error {
-	e := p.l.i + 1
+	e := p.l.i + 80
 	if len(p.l.b) < e {
 		e = len(p.l.b)
 	}
-	return fmt.Errorf("%s, got %q (%q) while parsing: %q", exp, p.l.b[p.l.start:e], got, p.l.b[p.start:e])
+	start := int(math.Max(0, float64(p.start-80)))
+	return fmt.Errorf("%s, got %q (%q) while parsing  (long): %q", exp, p.l.b[p.l.start:e], got, p.l.b[start:e])
 }
 
 // Next advances the parser to the next sample. It returns false if no
@@ -242,6 +243,7 @@ func (p *OpenMetricsParser) Next() (Entry, error) {
 	case tEOF:
 		return EntryInvalid, errors.New("data does not end with # EOF")
 	case tHelp, tType, tUnit:
+	  tStart :=  p.l.start
 		switch t2 := p.nextToken(); t2 {
 		case tMName:
 			mStart := p.l.start
@@ -252,7 +254,7 @@ func (p *OpenMetricsParser) Next() (Entry, error) {
 			}
 			p.offsets = append(p.offsets, mStart, mEnd)
 		default:
-			return EntryInvalid, p.parseError("expected metric name 3  after "+t.String(), t2)
+			return EntryInvalid, p.parseError("expected metric name 3  after "+t.String()+" "+string(p.l.b), t2)
 		}
 		switch t2 := p.nextToken(); t2 {
 		case tText:
@@ -262,7 +264,7 @@ func (p *OpenMetricsParser) Next() (Entry, error) {
 				p.text = []byte{}
 			}
 		default:
-			return EntryInvalid, fmt.Errorf("expected text in  3 %s: got %v", t.String(), t2.String())
+			return EntryInvalid, fmt.Errorf("expected text in  3 %s: got %v (%v)", t.String(), t2.String(), string(p.l.b[tStart:tStart+40]))
 		}
 		switch t {
 		case tType:
@@ -388,6 +390,7 @@ func (p *OpenMetricsParser) parseComment() error {
 func (p *OpenMetricsParser) parseLVals(offsets []int) ([]int, error) {
 	t := p.nextToken()
 	for {
+		// fmt.Println("parse top tok", t)
 		curTStart := p.l.start
 		curTI := p.l.i
 		switch t {
@@ -400,6 +403,7 @@ func (p *OpenMetricsParser) parseLVals(offsets []int) ([]int, error) {
 		}
 
 		t = p.nextToken()
+		// fmt.Println("next tok", t)
 		// A quoted string followed by a comma or brace is a metric name. Set the
 		// offsets and continue processing.
 		if t == tComma || t == tBraceClose {
@@ -408,6 +412,9 @@ func (p *OpenMetricsParser) parseLVals(offsets []int) ([]int, error) {
 			}
 			offsets[0] = curTStart + 1
 			offsets[1] = curTI - 1
+			if t == tBraceClose {
+				return offsets, nil
+			}
 			t = p.nextToken()
 			continue
 		}

@@ -34,6 +34,7 @@ go_gc_duration_seconds{quantile="0.5",a="b"} 8.3835e-05
 {"http.status",q="0.9",a="b"} 8.3835e-05
 {"http.status",q="0.9",a="b"} 8.3835e-05
 {q="0.9","http.status",a="b"} 8.3835e-05
+{"go.gc_duration_seconds_sum"} 0.004304266
 # HELP nohelp1 
 # HELP help2 escape \ \n \\ \" \x chars
 # UNIT nounit 
@@ -119,6 +120,10 @@ foo_total 17.0 1520879607.789 # {id="counter-test"} 5`
 			m:    `{q="0.9","http.status",a="b"}`,
 			v:    8.3835e-05,
 			lset: labels.FromStrings("__name__", "http.status", "q", "0.9", "a", "b"),
+		}, {
+			m:    `{"go.gc_duration_seconds_sum"}`,
+			v:    0.004304266,
+			lset: labels.FromStrings("__name__", "go.gc_duration_seconds_sum"),
 		}, {
 			m:    "nohelp1",
 			help: "",
