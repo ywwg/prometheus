@@ -25,12 +25,15 @@ import (
 )
 
 func TestOpenMetricsParse(t *testing.T) {
-	input := `# HELP go_gc_duration_seconds A summary of the GC invocation durations.
+	input := `# HELP "go.gc_duration_seconds" A summary of the GC invocation durations.
 # TYPE go_gc_duration_seconds summary
 # UNIT go_gc_duration_seconds seconds
 go_gc_duration_seconds{quantile="0"} 4.9351e-05
 go_gc_duration_seconds{quantile="0.25"} 7.424100000000001e-05
 go_gc_duration_seconds{quantile="0.5",a="b"} 8.3835e-05
+{"http.status",q="0.9",a="b"} 8.3835e-05
+{"http.status",q="0.9",a="b"} 8.3835e-05
+{q="0.9","http.status",a="b"} 8.3835e-05
 # HELP nohelp1 
 # HELP help2 escape \ \n \\ \" \x chars
 # UNIT nounit 
@@ -84,7 +87,7 @@ foo_total 17.0 1520879607.789 # {id="counter-test"} 5`
 		e       *exemplar.Exemplar
 	}{
 		{
-			m:    "go_gc_duration_seconds",
+			m:    "go.gc_duration_seconds",
 			help: "A summary of the GC invocation durations.",
 		}, {
 			m:   "go_gc_duration_seconds",
@@ -104,6 +107,18 @@ foo_total 17.0 1520879607.789 # {id="counter-test"} 5`
 			m:    `go_gc_duration_seconds{quantile="0.5",a="b"}`,
 			v:    8.3835e-05,
 			lset: labels.FromStrings("__name__", "go_gc_duration_seconds", "quantile", "0.5", "a", "b"),
+		}, {
+			m:    `{"http.status",q="0.9",a="b"}`,
+			v:    8.3835e-05,
+			lset: labels.FromStrings("__name__", "http.status", "q", "0.9", "a", "b"),
+		}, {
+			m:    `{"http.status",q="0.9",a="b"}`,
+			v:    8.3835e-05,
+			lset: labels.FromStrings("__name__", "http.status", "q", "0.9", "a", "b"),
+		}, {
+			m:    `{q="0.9","http.status",a="b"}`,
+			v:    8.3835e-05,
+			lset: labels.FromStrings("__name__", "http.status", "q", "0.9", "a", "b"),
 		}, {
 			m:    "nohelp1",
 			help: "",
@@ -251,6 +266,7 @@ foo_total 17.0 1520879607.789 # {id="counter-test"} 5`
 	var res labels.Labels
 
 	for {
+		// fmt.Println("-----------", exp[i].m)
 		et, err := p.Next()
 		if errors.Is(err, io.EOF) {
 			break

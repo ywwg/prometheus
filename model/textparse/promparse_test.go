@@ -29,7 +29,7 @@ import (
 )
 
 func TestPromParse(t *testing.T) {
-	input := `# HELP go_gc_duration_seconds A summary of the GC invocation durations.
+	input := `# HELP "go.gc_duration_seconds" A summary of the GC invocation durations.
 # 	TYPE go_gc_duration_seconds summary
 go_gc_duration_seconds{quantile="0"} 4.9351e-05
 go_gc_duration_seconds{quantile="0.25",} 7.424100000000001e-05
@@ -42,7 +42,7 @@ wind_speed{A="2",c="3"} 12345
 # comment with escaped \n newline
 # comment with escaped \ escape character
 # HELP nohelp1
-# HELP nohelp2 
+# HELP nohelp2
 go_gc_duration_seconds{ quantile="1.0", a="b" } 8.3835e-05
 go_gc_duration_seconds { quantile="1.0", a="b" } 8.3835e-05
 go_gc_duration_seconds { quantile= "1.0", a= "b", } 8.3835e-05
@@ -70,7 +70,7 @@ testmetric{label="\"bar\""} 1`
 		comment string
 	}{
 		{
-			m:    "go_gc_duration_seconds",
+			m:    "go.gc_duration_seconds",
 			help: "A summary of the GC invocation durations.",
 		}, {
 			m:   "go_gc_duration_seconds",
@@ -267,7 +267,7 @@ func TestPromParseErrors(t *testing.T) {
 		},
 		{
 			input: `{a="ok"} 1`,
-			err:   "expected a valid start token, got \"{\" (\"INVALID\") while parsing: \"{\"",
+			err:   "metric name not set while parsing: \"{a=\\\"ok\\\"} 1\\n\"",
 		},
 		{
 			input: "# TYPE #\n#EOF\n",
